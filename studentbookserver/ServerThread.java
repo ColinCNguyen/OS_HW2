@@ -52,15 +52,15 @@ public class ServerThread implements Runnable
 			in.nextLine();
 			switch (code) {
 				case 1: //------- search request
+					request.startPos= 0;
+					request.stopPos= db.size();			// just in case size has changed since last search
+					request.searchVal= in.nextLine();
 					reader.acquire();
 					numReaders++;
 					if(numReaders == 1){
 						dbw.acquire();
 					}
 					reader.release();
-					request.startPos= 0;
-					request.stopPos= db.size();			// just in case size has changed since last search
-					request.searchVal= in.nextLine();
 					db.searchByTitle(request);
 					while (request.foundPos >= 0) {
 						out.printf("[%4d] %s\n",request.foundPos,db.getBook(request.foundPos));
@@ -75,8 +75,8 @@ public class ServerThread implements Runnable
 					reader.release();
 					break;
 				case 2: //------- insert request
-					dbw.acquire();
 					bookStr= in.nextLine();
+					dbw.acquire();
 					System.out.println("Book str: "+bookStr);
 					if (db.insertBook(bookStr)) {
 						out.println("success");
@@ -101,7 +101,9 @@ public class ServerThread implements Runnable
 			}
 		}
 			con.close();
+			dbw.acquire();
 			if (madeChanges) db.saveState();
+			dbw.release();
 
 		} catch (Exception e) {}
 	}
